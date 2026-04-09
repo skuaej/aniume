@@ -72,6 +72,8 @@ const Watch = () => {
                     src={streamUrl} 
                     controls 
                     autoPlay 
+                    playsInline
+                    crossOrigin="anonymous"
                     style={{ width: '100%', aspectRatio: '16/9' }}
                 />
             </div>

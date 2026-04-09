@@ -33,8 +33,15 @@ const streamFile = async (req, res, episode_id) => {
     if (!document) return res.status(404).send('No document found in message');
 
     const totalSize = Number(document.size);
-    const mimeType = document.mimeType || 'video/mp4';
+    let mimeType = document.mimeType || 'video/mp4';
+    
+    // MKV is often not supported, mapping to video/webm can help browsers that support WebM
+    if (mimeType === 'video/x-matroska') {
+        mimeType = 'video/webm';
+    }
+
     const range = req.headers.range;
+    res.setHeader('Accept-Ranges', 'bytes');
 
     // --- FALLBACK LOGIC ---
     // If GramJS is not connected OR the file is small, we can use the standard Bot API (20MB limit)

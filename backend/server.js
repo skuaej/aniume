@@ -12,7 +12,9 @@ const PORT = process.env.PORT || 5000;
 // Connect to Database
 connectDB();
 
-app.use(cors());
+app.use(cors({
+  exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length']
+}));
 app.use(express.json());
 app.use(express.static('public')); // Serve frontend
 
