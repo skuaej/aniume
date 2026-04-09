@@ -64,7 +64,11 @@ const streamFile = async (req, res, episode_id) => {
       const end = parts[1] ? parseInt(parts[1], 10) : totalSize - 1;
       const chunksize = (end - start) + 1;
 
-      console.log(`Streaming Range: ${start}-${end}/${totalSize} | ${episode.title}`);
+      const chunkSize = 512 * 1024; // 512KB
+      const alignedOffset = start - (start % chunkSize);
+      const firstPartCut = start - alignedOffset;
+      
+      console.log(`Streaming Range: ${start}-${end}/${totalSize} (Aligned: ${alignedOffset}) | ${episode.title}`);
 
       res.writeHead(206, {
         "Content-Range": `bytes ${start}-${end}/${totalSize}`,
@@ -75,6 +79,8 @@ const streamFile = async (req, res, episode_id) => {
 
       // Stream chunks from GramJS
       let bytesSent = 0;
+      let isFirstChunk = true;
+
       for await (const chunk of client.iterDownload({
         file: new Api.InputDocumentFileLocation({
             id: document.id,
@@ -82,14 +88,24 @@ const streamFile = async (req, res, episode_id) => {
             fileReference: document.fileReference,
             thumbSize: ""
         }),
-        offset: bigInt(start),
-        requestSize: 512 * 1024, // 512KB chunks
+        offset: bigInt(alignedOffset),
+        requestSize: chunkSize,
       })) {
-        const bytesToTake = Math.min(chunk.length, chunksize - bytesSent);
-        const data = chunk.slice(0, bytesToTake);
+        let currentChunk = chunk;
+        
+        // Trim the beginning of the first chunk if necessary
+        if (isFirstChunk && firstPartCut > 0) {
+            currentChunk = currentChunk.slice(firstPartCut);
+        }
+        isFirstChunk = false;
+
+        const bytesToTake = Math.min(currentChunk.length, chunksize - bytesSent);
+        const data = currentChunk.slice(0, bytesToTake);
+
         if (!res.write(data)) {
             await new Promise((resolve) => res.once('drain', resolve));
         }
+
         bytesSent += bytesToTake;
         if (bytesSent >= chunksize) break;
       }
