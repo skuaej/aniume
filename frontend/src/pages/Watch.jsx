@@ -51,7 +51,8 @@ const Watch = () => {
     if (loading) return <div className="container">Loading player...</div>;
     if (!episode) return <div className="container">Error loading episode.</div>;
 
-    const streamUrl = `${api.defaults.baseURL}/api/watch/${id}?hash=${hash}`;
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://few-sabra-uhhy5-9930c646.koyeb.app';
+    const streamUrl = `${backendUrl}/api/watch/${id}?hash=${hash}`;
 
     return (
         <div className="container" style={{ padding: '20px 0' }}>
