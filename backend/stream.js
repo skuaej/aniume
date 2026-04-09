@@ -2,6 +2,7 @@ const { client } = require('./telegram');
 const Anime = require('./models/Anime');
 const { Api } = require('telegram');
 const mongoose = require('mongoose');
+const bigInt = require('big-integer');
 
 const streamFile = async (req, res, episode_id) => {
   try {
@@ -73,6 +74,7 @@ const streamFile = async (req, res, episode_id) => {
       });
 
       // Stream chunks from GramJS
+      let bytesSent = 0;
       for await (const chunk of client.iterDownload({
         file: new Api.InputDocumentFileLocation({
             id: document.id,
@@ -80,13 +82,16 @@ const streamFile = async (req, res, episode_id) => {
             fileReference: document.fileReference,
             thumbSize: ""
         }),
-        offset: Number(start),
-        limit: Number(chunksize),
+        offset: bigInt(start),
         requestSize: 512 * 1024, // 512KB chunks
       })) {
-        if (!res.write(chunk)) {
+        const bytesToTake = Math.min(chunk.length, chunksize - bytesSent);
+        const data = chunk.slice(0, bytesToTake);
+        if (!res.write(data)) {
             await new Promise((resolve) => res.once('drain', resolve));
         }
+        bytesSent += bytesToTake;
+        if (bytesSent >= chunksize) break;
       }
       res.end();
     } else {
