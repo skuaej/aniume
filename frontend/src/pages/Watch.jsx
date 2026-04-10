@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
-import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, Maximize2 } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, Volume2, Share2, Link2, MessageCircle, Send, Check } from 'lucide-react';
 
 const Watch = () => {
     const { id } = useParams();
@@ -13,6 +13,7 @@ const Watch = () => {
     const [anime, setAnime] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [copied, setCopied] = useState(false);
     const videoRef = useRef(null);
 
     useEffect(() => {
@@ -35,6 +36,14 @@ const Watch = () => {
         };
         if (id) fetchEpisode();
     }, [id]);
+
+    // Privacy logic: Hide sensitive 'hash' from the user's browser bar after it's loaded
+    useEffect(() => {
+        if (!loading && episode && window.location.search.includes('hash=')) {
+            const cleanUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    }, [loading, episode]);
 
     // Resume from last watched position ("Continue Watching")
     useEffect(() => {
@@ -88,6 +97,23 @@ const Watch = () => {
     const prevEp = currentIdx > 0 ? sortedEps[currentIdx - 1] : null;
     const nextEp = currentIdx < sortedEps.length - 1 ? sortedEps[currentIdx + 1] : null;
 
+    const shareInfo = {
+        title: `${anime?.title || 'Anime'} - Episode ${episode?.episode_number}`,
+        url: window.location.href, // This points to MIZOFY frontend, not backend
+        text: `Watch ${anime?.title} Episode ${episode?.episode_number} on Mizofy! 🍿`
+    };
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(shareInfo.url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    const shareLinks = {
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareInfo.text + ' ' + shareInfo.url)}`,
+        telegram: `https://t.me/share/url?url=${encodeURIComponent(shareInfo.url)}&text=${encodeURIComponent(shareInfo.text)}`
+    };
+
     return (
         <div className="container" style={{ padding: '20px 0', maxWidth: '1100px' }}>
             {/* Header */}
@@ -104,7 +130,11 @@ const Watch = () => {
                 <div style={{ padding: '3px 12px', background: 'var(--accent)', borderRadius: '4px', fontSize: '0.78rem', fontWeight: '700', letterSpacing: '0.5px' }}>
                     EP {episode.episode_number}
                 </div>
-                <h1 style={{ fontSize: '1.1rem', fontWeight: '600', margin: 0, flex: 1 }}>{episode.title}</h1>
+                <h1 style={{ fontSize: '1.2rem', fontWeight: '800', margin: 0, flex: 1, letterSpacing: '-0.5px' }}>{episode.title}</h1>
+                <div style={{ color: 'var(--text-dim)', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px', opacity: 0.8 }}>
+                    <Volume2 size={14} />
+                    <span>Auto-resume</span>
+                </div>
             </div>
 
             {/* Video Player */}
@@ -114,9 +144,9 @@ const Watch = () => {
                     position: 'relative',
                     width: '100%',
                     background: '#000',
-                    borderRadius: '12px',
+                    borderRadius: '20px',
                     overflow: 'hidden',
-                    boxShadow: '0 30px 80px rgba(0,0,0,0.9)',
+                    boxShadow: '0 30px 100px rgba(0,0,0,0.9)',
                     border: '1px solid rgba(255,255,255,0.08)',
                 }}
             >
@@ -127,24 +157,22 @@ const Watch = () => {
                     controls
                     autoPlay
                     playsInline
-                    preload="metadata"
                     style={{ width: '100%', aspectRatio: '16/9', display: 'block' }}
                     onError={(e) => {
                         console.error('Video error:', e.target.error?.code, e.target.error?.message);
                         setError(`Video failed to load. Error code: ${e.target.error?.code || 'unknown'}. Please check backend logs.`);
                     }}
-                    onLoadStart={() => console.log('Stream URL:', streamUrl)}
                 />
             </div>
 
-            {/* Navigation Controls */}
-            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+            {/* Controls & Share */}
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     {prevEp && (
                         <Link
                             to={`/watch/${prevEp._id}?hash=${prevEp.watch_url?.split('hash=')[1] || ''}`}
                             className="btn"
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontSize: '0.9rem', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)' }}
                         >
                             <ChevronLeft size={16} />
                             EP {prevEp.episode_number}
@@ -154,17 +182,33 @@ const Watch = () => {
                         <Link
                             to={`/watch/${nextEp._id}?hash=${nextEp.watch_url?.split('hash=')[1] || ''}`}
                             className="btn"
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontSize: '0.9rem' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', fontSize: '0.9rem' }}
                         >
-                            EP {nextEp.episode_number}
+                            Next Episode
                             <ChevronRight size={16} />
                         </Link>
                     )}
                 </div>
 
-                <div style={{ color: 'var(--text-dim)', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Volume2 size={14} />
-                    Auto-resume enabled
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '0.85rem', fontWeight: '600' }}>SHARE:</span>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <a href={shareLinks.whatsapp} target="_blank" rel="noreferrer" title="Share via WhatsApp" style={{ 
+                            width: '40px', height: '40px', borderRadius: '10px', background: '#25D366', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s' 
+                        }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                            <MessageCircle size={20} fill="currentColor" />
+                        </a>
+                        <a href={shareLinks.telegram} target="_blank" rel="noreferrer" title="Share via Telegram" style={{ 
+                            width: '40px', height: '40px', borderRadius: '10px', background: '#0088cc', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'transform 0.2s'
+                        }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                            <Send size={20} fill="currentColor" />
+                        </a>
+                        <button onClick={handleCopy} title="Copy Link" style={{ 
+                            width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', color: copied ? 'var(--accent)' : 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s'
+                        }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}>
+                            {copied ? <Check size={20} /> : <Link2 size={20} />}
+                        </button>
+                    </div>
                 </div>
             </div>
 

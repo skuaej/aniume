@@ -2,6 +2,7 @@ const { client } = require('./telegram');
 const Anime = require('./models/Anime');
 const { Api } = require('telegram');
 const mongoose = require('mongoose');
+const { sanitizeName } = require('./utils');
 
 // VJ-Video-Player style streaming: math-aligned offsets, continuous chunk fetching
 // Based on: https://github.com/VJBots/VJ-Video-Player/blob/main/TechVJ/util/custom_dl.py
@@ -10,7 +11,8 @@ const CHUNK_SIZE = 1024 * 1024; // 1MB chunks
 
 async function* yieldFile(document, offset, firstPartCut, lastPartCut, partCount) {
     let currentPart = 1;
-    let currentOffset = offset; // track offset separately so we advance it per-chunk
+    let currentOffset = offset;
+    let activeDcId = document.dcId; // Initial DC from document metadata
 
     const location = new Api.InputDocumentFileLocation({
         id: document.id,
@@ -20,19 +22,40 @@ async function* yieldFile(document, offset, firstPartCut, lastPartCut, partCount
     });
 
     while (currentPart <= partCount) {
-        // CRITICAL FIX: send a NEW GetFile request on every iteration (not just the first)
         let result;
         try {
+            // Using downloadFile style logic or ensuring correct DC client
+            // For simplicity in a stream, we use invoke on a DC-specific sender if needed,
+            // but GramJS's client.invoke usually handles the session.
+            // If we get a FILE_MIGRATE error, we'll catch it here.
             result = await client.invoke(
                 new Api.upload.GetFile({
                     location,
-                    offset: BigInt(currentOffset), // GramJS 2.x expects BigInt for offset
+                    offset: BigInt(currentOffset),
                     limit: CHUNK_SIZE,
                     precise: true,
                 })
-            );
+            ).catch(async (err) => {
+                if (err.message.includes('FILE_MIGRATE_')) {
+                    const newDc = parseInt(err.message.split('_').pop());
+                    console.log(`[DC_MIGRATE] Shifting to DC ${newDc} for file retrieval...`);
+                    // We let GramJS handle the migration internally on next call if autoReconnect is on
+                    // or we can specifically request from new DC.
+                    // For now, we'll retry once after a short wait.
+                    await new Promise(r => setTimeout(r, 500));
+                    return await client.invoke(
+                        new Api.upload.GetFile({
+                            location,
+                            offset: BigInt(currentOffset),
+                            limit: CHUNK_SIZE,
+                            precise: true,
+                        })
+                    );
+                }
+                throw err;
+            });
         } catch (e) {
-            console.error(`GetFile error at offset ${currentOffset}:`, e.message);
+            console.error(`GetFile error at DC ${activeDcId}, offset ${currentOffset}:`, e.message);
             break;
         }
 
@@ -73,6 +96,12 @@ const streamFile = async (req, res, episode_id) => {
     }
 
     const episode = anime.episodes[0];
+
+    // If this episode was added via external URL (admin panel), redirect to it
+    if (episode.media_url) {
+        return res.redirect(302, episode.media_url);
+    }
+
     const { chat_id, message_id } = episode;
 
     if (!chat_id || !message_id) {
@@ -148,7 +177,7 @@ const streamFile = async (req, res, episode_id) => {
     const lastPartCut = (untilBytes % CHUNK_SIZE) + 1;
     const partCount = Math.ceil((untilBytes + 1) / CHUNK_SIZE) - Math.floor(offset / CHUNK_SIZE);
 
-    console.log(`[STREAM] ${episode.title} | bytes ${fromBytes}-${untilBytes}/${fileSize} | parts=${partCount} offset=${offset} firstCut=${firstPartCut} lastCut=${lastPartCut}`);
+    console.log(`[STREAM] ${sanitizeName(episode.title)} | bytes ${fromBytes}-${untilBytes}/${fileSize} | parts=${partCount}`);
 
     const statusCode = rangeHeader ? 206 : 200;
 

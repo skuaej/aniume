@@ -16,9 +16,9 @@ const Navbar = () => {
     return (
         <nav className="glass" style={{ position: 'sticky', top: 0, zIndex: 100, marginBottom: '20px' }}>
             <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '70px' }}>
-                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--accent)' }}>
-                    <Popcorn size={28} />
-                    <span>AniWatch</span>
+                <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.6rem', fontWeight: '900', color: 'var(--accent)', letterSpacing: '-0.5px' }}>
+                    <Popcorn size={28} fill="var(--accent)" />
+                    <span>MIZOFY</span>
                 </Link>
 
                 <form onSubmit={handleSearch} className="search-form" style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>

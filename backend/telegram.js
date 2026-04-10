@@ -5,6 +5,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const Anime = require('./models/Anime');
+const { sanitizeName } = require('./utils');
 require('dotenv').config();
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
@@ -133,7 +134,7 @@ bot.on(['message', 'channel_post'], async (ctx) => {
                 $push: {
                     episodes: {
                         episode_number: epNumber,
-                        title: fileName || `${animeTitle} Episode ${epNumber}`,
+                        title: sanitizeName(fileName || `${animeTitle} Episode ${epNumber}`),
                         file_id: file_id,
                         message_id: message.message_id,
                         chat_id: ctx.chat.id.toString()
@@ -187,6 +188,27 @@ bot.command('total', async (ctx) => {
     }
 });
 
+// Function to send backup/log message to channel
+const sendEpisodeLog = async (animeTitle, episode, status = 'New') => {
+    const channelId = process.env.CHANNEL_ID;
+    if (!channelId) return;
+
+    const emoji = status === 'New' ? '🆕' : '🔄';
+    const message = `${emoji} *${status} Episode Indexed*\n\n` +
+                    `📺 *Anime:* ${animeTitle}\n` +
+                    `🔢 *Episode:* ${episode.episode_number}\n` +
+                    `📝 *Title:* ${episode.title || 'N/A'}\n` +
+                    `🔗 *Media:* ${episode.media_url ? 'External Link' : 'Telegram File'}\n\n` +
+                    `#${animeTitle.replace(/\s+/g, '_')} #Episode_${episode.episode_number}`;
+
+    try {
+        await bot.telegram.sendMessage(channelId, message, { parse_mode: 'Markdown' });
+        console.log(`Telegram log sent for ${animeTitle} Ep ${episode.episode_number}`);
+    } catch (err) {
+        console.error('Error sending Telegram log:', err.message);
+    }
+};
+
 // Launch bot
 bot.launch({ dropPendingUpdates: true }).catch((err) => {
     if (err.response?.error_code === 409) {
@@ -200,4 +222,4 @@ bot.launch({ dropPendingUpdates: true }).catch((err) => {
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
 
-module.exports = { getFilePath, bot, client };
+module.exports = { getFilePath, bot, client, sendEpisodeLog };
