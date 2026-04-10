@@ -27,6 +27,16 @@ const generateHash = (episodeId) => {
 
 // --- API ROUTES ---
 
+// Health check - useful for debugging streaming issues
+app.get('/api/health', (req, res) => {
+  const { client } = require('./telegram');
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    gramjs_connected: client?.connected || false,
+  });
+});
+
 // Search Anime
 app.get('/api/search', async (req, res) => {
   const { q } = req.query;

@@ -130,3 +130,7 @@ a {
 .search-form:focus-within .search-icon {
   color: var(--accent) !important;
 }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
