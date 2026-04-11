@@ -22,6 +22,10 @@ async def start(client, message):
         quote=True
     )
 
+@channelforward.on_message(filters.command("botping") & filters.private)
+async def botping(client, message):
+    await message.reply("🏓 **Pong!** I am alive and connected to Koyeb.")
+
 ################################################################################################################################################################################################################################################
 # about command
 

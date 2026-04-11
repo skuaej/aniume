@@ -4,6 +4,7 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
+ENV VITE_API_BASE_URL=""
 RUN npm run build
 
 # Stage 2: Runtime
