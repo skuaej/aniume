@@ -11,7 +11,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install Python and build tools for native modules
-RUN apk add --no-cache python3 py3-pip build-base
+RUN apk add --no-cache python3 py3-pip build-base python3-dev
 
 # Install PM2 globally
 RUN npm install -g pm2
