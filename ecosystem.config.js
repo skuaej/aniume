@@ -10,11 +10,12 @@ module.exports = {
     },
     {
       name: 'vj-forward-bot',
-      script: 'backend/vj_bot/bot.py',
+      script: 'bot.py',
+      cwd: 'backend/vj_bot',
       interpreter: 'python3',
       autorestart: true,
       env: {
-        PYTHONPATH: 'backend/vj_bot'
+        PYTHONPATH: '.'
       }
     }
   ]
