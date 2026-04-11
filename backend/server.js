@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const connectDB = require('./db');
@@ -482,9 +483,12 @@ app.put('/api/admin/anime/:id/episode/:epId', adminAuth, async (req, res) => {
   }
 });
 
-// ------------------------------------------------------------------
+// Catch-all route for SPA
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // START SERVER
-// ------------------------------------------------------------------
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Backend server running on port ${PORT}`);
 });

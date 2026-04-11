@@ -1,4 +1,7 @@
-# uvloop (Not for Windows)
+# Bot Dependencies
+motor
+pymongo
+dnspython
 tgcrypto
 pyrogram~=2.0.59
 Flask==2.2.2
