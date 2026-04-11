@@ -67,6 +67,9 @@ const adminAuth = (req, res, next) => {
 // PUBLIC API ROUTES
 // ------------------------------------------------------------------
 
+// Koyeb Health Check
+app.get('/ping', (req, res) => res.send('pong'));
+
 // Health check
 app.get('/api/health', (req, res) => {
   const { client } = require('./telegram');
