@@ -3,6 +3,8 @@
 # Ask Doubt on telegram @KingVJ01
 
 import logging
+import asyncio
+from pyrogram.errors import FloodWait
 logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(lineno)d - %(module)s - %(levelname)s - %(message)s'
@@ -27,18 +29,28 @@ class channelforward(Client, Config):
         )
 
     async def start(self):
-        await super().start()
+        try:
+            await super().start()
+        except FloodWait as e:
+            print(f"Bot start FloodWait: Waiting {e.value} seconds...")
+            await asyncio.sleep(e.value + 1)
+            await super().start()
+
         me = await self.get_me()
-        print(f"New session started for {me.first_name}({me.username})")
+        print(f"New session started for {me.first_name} (@{me.username})")
         
         # Warm up peer cache to prevent "Peer id invalid"
         print("Warming up chat cache...")
-        try:
-            await self.get_chat(self.SOURCE_CHANNEL)
-            await self.get_chat(self.TARGET_CHANNEL)
-            print("Chat cache warmed up successfully.")
-        except Exception as e:
-            print(f"Warning: Could not warm up cache for channels: {e}")
+        for channel in [self.SOURCE_CHANNEL, self.TARGET_CHANNEL]:
+            try:
+                await self.get_chat(channel)
+                print(f"Cached: {channel}")
+            except FloodWait as e:
+                print(f"Cache warmup FloodWait for {channel}: Sleeping {e.value}")
+                await asyncio.sleep(e.value + 1)
+                await self.get_chat(channel)
+            except Exception as e:
+                print(f"Warning: Could not warm up cache for {channel}: {e}")
 
     async def stop(self):
         await super().stop()
