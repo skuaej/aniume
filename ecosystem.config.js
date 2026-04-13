@@ -2,7 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'mizofy-api',
-      script: 'backend/server.js',
+      // server.js is now directly in /app (the WORKDIR)
+      script: 'server.js',
+      cwd: '/app',
       env: {
         NODE_ENV: 'production',
         PORT: process.env.PORT || 8000
@@ -11,11 +13,13 @@ module.exports = {
     {
       name: 'vj-forward-bot',
       script: 'bot.py',
-      cwd: 'backend/vj_bot',
+      // bot files are in /app/vj_bot/
+      cwd: '/app/vj_bot',
       interpreter: 'python3',
       autorestart: true,
+      watch: false,
       env: {
-        PYTHONPATH: '.'
+        PYTHONPATH: '/app/vj_bot'
       }
     }
   ]

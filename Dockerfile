@@ -4,30 +4,36 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
-ENV VITE_API_BASE_URL=""
-RUN npm run build
+RUN VITE_API_BASE_URL="" npm run build
 
 # Stage 2: Runtime
 FROM node:20-alpine
 WORKDIR /app
 
-# Install Python and build tools for native modules
-RUN apk add --no-cache python3 py3-pip build-base python3-dev
+# Install Python and build tools for native C extensions
+RUN apk add --no-cache python3 py3-pip build-base python3-dev libffi-dev
 
 # Install PM2 globally
 RUN npm install -g pm2
 
-# Install Backend Dependencies
+# Install Backend Node.js Dependencies
 COPY backend/package*.json ./
 RUN npm install
 
-# Copy Backend Code
-COPY backend/ ./backend/
+# Copy all backend files to /app (so server.js can find its modules correctly)
+COPY backend/ ./
 
-# Install Bot Dependencies
-RUN pip install --no-cache-dir -r backend/vj_bot/requirements.txt --break-system-packages
+# Install Python Bot Dependencies
+RUN pip install --no-cache-dir \
+    motor \
+    pymongo \
+    dnspython \
+    tgcrypto \
+    'pyrogram~=2.0.59' \
+    'aiohttp==3.8.1' \
+    --break-system-packages -r vj_bot/requirements.txt
 
-# Copy Frontend Build to Public
+# Copy Frontend Build
 COPY --from=frontend-builder /app/frontend/dist ./public
 
 # Copy PM2 Config
@@ -36,5 +42,4 @@ COPY ecosystem.config.js ./
 ENV PORT=8000
 EXPOSE 8000
 
-# Start both services
 CMD ["pm2-runtime", "ecosystem.config.js"]
