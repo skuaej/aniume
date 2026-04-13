@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
@@ -486,7 +487,15 @@ app.put('/api/admin/anime/:id/episode/:epId', adminAuth, async (req, res) => {
 
 // Catch-all route to serve the React frontend (RegExp for max Express 5 compatibility)
 app.get(/.*$/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+  // Try 'public' folder first (Production/Docker) then fallback to '../frontend/dist' (Local)
+  const productionPath = path.join(__dirname, 'public', 'index.html');
+  const localPath = path.join(__dirname, '../frontend/dist', 'index.html');
+  
+  if (fs.existsSync(productionPath)) {
+    res.sendFile(productionPath);
+  } else {
+    res.sendFile(localPath);
+  }
 });
 
 // START SERVER
