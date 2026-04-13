@@ -485,7 +485,7 @@ app.put('/api/admin/anime/:id/episode/:epId', adminAuth, async (req, res) => {
 });
 
 // Catch-all route to serve the React frontend (Express 5 compatible syntax)
-app.get('(.*)', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 

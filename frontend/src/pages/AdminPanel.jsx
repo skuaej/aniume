@@ -491,7 +491,7 @@ const AnimeRow = ({ anime: initialAnime, toast, onDelete }) => {
                 setPosterUrl(updated.poster);
                 setCategory(updated.category);
             }
-        } catch {}
+        } catch { }
     };
 
     const updateTitleInfo = async () => {
@@ -658,12 +658,12 @@ const AnimeRow = ({ anime: initialAnime, toast, onDelete }) => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '400px', overflowY: 'auto' }}>
                             {sortedEps.length === 0 && <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem', padding: '10px' }}>No episodes yet.</p>}
                             {sortedEps.map(ep => (
-                                <div key={ep._id} style={{ 
-                                    display: 'flex', 
+                                <div key={ep._id} style={{
+                                    display: 'flex',
                                     flexDirection: 'column',
-                                    gap: '10px', 
-                                    padding: '12px', 
-                                    background: editingEp === ep._id ? 'rgba(229,9,20,0.08)' : 'rgba(255,255,255,0.04)', 
+                                    gap: '10px',
+                                    padding: '12px',
+                                    background: editingEp === ep._id ? 'rgba(229,9,20,0.08)' : 'rgba(255,255,255,0.04)',
                                     borderRadius: '8px',
                                     border: editingEp === ep._id ? '1px solid var(--accent)' : '1px solid transparent'
                                 }}>
@@ -671,8 +671,8 @@ const AnimeRow = ({ anime: initialAnime, toast, onDelete }) => {
                                         <span style={{ color: 'var(--accent)', fontWeight: '700', minWidth: '35px', fontSize: '1rem' }}>{ep.episode_number}</span>
                                         <span style={{ flex: 1, fontSize: '0.95rem', fontWeight: '500' }}>{ep.title}</span>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                style={{ ...btnGhost, padding: '6px 12px', fontSize: '0.8rem', color: editingEp === ep._id ? 'var(--accent)' : 'inherit' }} 
+                                            <button
+                                                style={{ ...btnGhost, padding: '6px 12px', fontSize: '0.8rem', color: editingEp === ep._id ? 'var(--accent)' : 'inherit' }}
                                                 onClick={() => editingEp === ep._id ? cancelEditingEp() : startEditingEp(ep)}
                                             >
                                                 {editingEp === ep._id ? <><X size={14} /> Cancel</> : <><Edit3 size={14} /> Update</>}
@@ -682,7 +682,7 @@ const AnimeRow = ({ anime: initialAnime, toast, onDelete }) => {
                                             </button>
                                         </div>
                                     </div>
-                                    
+
                                     {editingEp === ep._id && (
                                         <div style={{ padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                             <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '10px', marginBottom: '10px' }}>
