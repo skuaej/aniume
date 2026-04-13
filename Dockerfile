@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir \
     dnspython \
     tgcrypto \
     'pyrogram~=2.0.59' \
-    'aiohttp==3.8.1' \
+    'aiohttp>=3.9.0' \
     --break-system-packages -r vj_bot/requirements.txt
 
 # Copy Frontend Build
