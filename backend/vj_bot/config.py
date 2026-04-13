@@ -18,3 +18,4 @@ class Config(object):
     # VJ Bot specifics
     AS_COPY = True
     CHANNEL = [SOURCE_CHANNEL, TARGET_CHANNEL]
+    OWNER_ID = int(getenv("OWNER_ID", "6804892450"))

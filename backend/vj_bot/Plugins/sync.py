@@ -4,7 +4,7 @@ from pyrogram import filters
 from pyrogram.errors import FloodWait, RPCError
 from bot import channelforward
 from config import Config
-from Plugins.database import process_metadata, index_media, anime_collection, state_collection, get_stats
+from Plugins.database import process_metadata, index_media, anime_collection, state_collection, get_stats, get_setting
 
 logger = logging.getLogger(__name__)
 
@@ -18,10 +18,13 @@ async def process_by_id(client, message_id):
         exists = await anime_collection.find_one({"episodes.source_message_id": message_id})
         if exists: return "Duplicate"
 
+        source = await get_setting("SOURCE_CHANNEL", Config.SOURCE_CHANNEL)
+        target = await get_setting("TARGET_CHANNEL", Config.TARGET_CHANNEL)
+
         try:
             target_msg = await client.copy_message(
-                chat_id=Config.TARGET_CHANNEL,
-                from_chat_id=Config.SOURCE_CHANNEL,
+                chat_id=target,
+                from_chat_id=source,
                 message_id=message_id
             )
         except FloodWait as e:
@@ -30,8 +33,8 @@ async def process_by_id(client, message_id):
             await asyncio.sleep(e.value + 1)
             # Retry once
             target_msg = await client.copy_message(
-                chat_id=Config.TARGET_CHANNEL,
-                from_chat_id=Config.SOURCE_CHANNEL,
+                chat_id=target,
+                from_chat_id=source,
                 message_id=message_id
             )
 
@@ -41,7 +44,7 @@ async def process_by_id(client, message_id):
         await asyncio.sleep(0.5) 
         metadata = process_metadata(target_msg)
         if metadata:
-            return await index_media(message_id, target_msg.id, Config.TARGET_CHANNEL, metadata)
+            return await index_media(message_id, target_msg.id, target, metadata)
         return "Not Video"
     except RPCError as e:
         msg = str(e).lower()
@@ -113,12 +116,15 @@ async def stats_dashboard(client, message):
     stats = await get_stats()
     status = "🟢 ACTIVE" if SYNC_ACTIVE else "🔴 STOPPED"
     
+    source = await get_setting("SOURCE_CHANNEL", Config.SOURCE_CHANNEL)
+    target = await get_setting("TARGET_CHANNEL", Config.TARGET_CHANNEL)
+    
     msg = f"📊 **Anime Statistics**\n\n" + \
           f"🏢 **Total Anime**: {stats['total_anime']}\n" + \
           f"📀 **Total Episodes**: {stats['total_episodes']}\n" + \
           f"📍 **Last Mirrored ID**: `{stats['last_id']}`\n\n" + \
-          f"📡 **Source**: `{Config.SOURCE_CHANNEL}`\n" + \
-          f"🎯 **Target**: `{Config.TARGET_CHANNEL}`\n\n" + \
+          f"📡 **Source**: `{source}`\n" + \
+          f"🎯 **Target**: `{target}`\n\n" + \
           f"⚡ **Sync Status**: {status}\n" + \
           f"Use `/transfer` to resume from the last ID."
     

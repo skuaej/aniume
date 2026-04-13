@@ -11,6 +11,7 @@ client = AsyncIOMotorClient(Config.DATABASE_URI)
 db = client[Config.DATABASE_NAME]
 anime_collection = db["animes"]
 state_collection = db["states"]
+settings_collection = db["settings"]
 
 import logging
 logger = logging.getLogger(__name__)
@@ -135,3 +136,10 @@ async def get_stats():
         "total_episodes": total_episodes,
         "last_id": last_id["value"] if last_id else 0
     }
+
+async def get_setting(key, default):
+    res = await settings_collection.find_one({"key": key})
+    return res["value"] if res else default
+
+async def set_setting(key, value):
+    await settings_collection.update_one({"key": key}, {"$set": {"value": value}}, upsert=True)
