@@ -88,8 +88,7 @@ const Watch = () => {
     // Build the stream URL:
     // - In dev: vite proxies /api/* to localhost:5000, so we use a relative path
     // - In production: VITE_API_BASE_URL env var points to the Koyeb backend
-    const backendBase = import.meta.env.VITE_API_BASE_URL || '';
-    const streamUrl = `${backendBase}/api/watch/${id}?hash=${hash}`;
+    const streamUrl = `/api/watch/${id}?hash=${hash}`;
 
     // Find prev/next episodes
     const sortedEps = [...(anime?.episodes || [])].sort((a, b) => a.episode_number - b.episode_number);
