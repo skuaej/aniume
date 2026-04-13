@@ -1,6 +1,6 @@
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
+const cors = require('cors');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const connectDB = require('./db');
@@ -30,6 +30,7 @@ app.use((req, res, next) => {
 app.use(cors({ exposedHeaders: ['Content-Range', 'Accept-Ranges', 'Content-Length'] }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // ------------------------------------------------------------------
 // HELPERS
@@ -483,9 +484,9 @@ app.put('/api/admin/anime/:id/episode/:epId', adminAuth, async (req, res) => {
   }
 });
 
-// Catch-all route for SPA
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Catch-all route to serve the React frontend (Express 5 compatible syntax)
+app.get('(.*)', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // START SERVER
